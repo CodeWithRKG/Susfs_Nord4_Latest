@@ -25,7 +25,7 @@ jobs:
             manifest: oneplus_nord_4_v.xml
             android_version: android14
             kernel_version: "6.1"
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/rkg.yml
     secrets: inherit
     with:
       model: ${{ matrix.model }}
