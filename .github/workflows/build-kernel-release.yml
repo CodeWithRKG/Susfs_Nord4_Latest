@@ -43,7 +43,7 @@ jobs:
     env:
       TZ: Asia/Kolkata
       REPO_OWNER: CodeWithRKG
-      REPO_NAME: Susfs_Nord4_Latest_With_BBR
+      REPO_NAME: Susfs_Nord4_Latest
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_NAME: "*Susfs Patched Kernels With KernelSU Next and BBR*"
       RELEASE_NOTES: |
