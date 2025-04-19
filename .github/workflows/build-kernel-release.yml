@@ -52,11 +52,14 @@ jobs:
         Kernel Flasher: 
         -> https://github.com/fatalcoder524/KernelFlasher
 
-        Module: 
+        Susfs for KernelSU Module: 
+        -> https://github.com/sidex15/ksu_module_susfs
+
+        Mountify for KernelSU Module: 
         -> https://github.com/sidex15/ksu_module_susfs
 
         Non-Official Managers:
-        -> https://github.com/KernelSU-Next/KernelSU-Next
+        -> https://github.com/backslashxx/mountify
 
         Features:
         [+] KernelSU-Next
