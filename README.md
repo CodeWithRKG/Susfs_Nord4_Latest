@@ -5,7 +5,7 @@ This is Susfs Patched kernel for OnePlus Nord 4 with [Mountify](https://github.c
 Requirement:
 
 * Bootloader Unlocked
-* 
+ 
 * [Kernel Flasher](https://github.com/fatalcoder524/KernelFlasher)
 
 * Little skill ☺️
