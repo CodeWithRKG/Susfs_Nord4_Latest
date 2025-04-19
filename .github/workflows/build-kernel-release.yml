@@ -65,6 +65,7 @@ jobs:
         [+] KernelSU-Next
         [+] SUSFS v1.5.5
         [+] BBR
+        [+] Mountify
 
     steps:
       - name: Checkout code
