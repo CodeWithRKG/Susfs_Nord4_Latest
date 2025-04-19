@@ -56,10 +56,10 @@ jobs:
         -> https://github.com/sidex15/ksu_module_susfs
 
         Mountify for KernelSU Module: 
-        -> https://github.com/sidex15/ksu_module_susfs
+        -> https://github.com/backslashxx/mountify
 
         Non-Official Managers:
-        -> https://github.com/backslashxx/mountify
+        -> https://github.com/KernelSU-Next/KernelSU-Next
 
         Features:
         [+] KernelSU-Next
