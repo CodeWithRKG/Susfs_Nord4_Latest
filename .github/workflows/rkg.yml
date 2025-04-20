@@ -286,9 +286,9 @@ jobs:
           sed -i 's/check_defconfig//' ./common/build.config.gki
           # Generate a random 13-character string (lowercase letters and numbers)
           random_text=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 13)
-          sed -i "$s|echo \"\$res\"|echo \"\$res-$random_text\"|' ./common/scripts/setlocalversion
-          sed -i "$s|echo \"\$res\"|echo \"\$res-$random_text\"|' ./msm-kernel/scripts/setlocalversion
-          sed -i "$s|echo \"\$res\"|echo \"\$res-$random_text\"|' ./external/dtc/scripts/setlocalversion
+          sed -i '$s|echo "\$res"|echo "\$res-$random_text"|' ./common/scripts/setlocalversion
+          sed -i '$s|echo "\$res"|echo "\$res-$random_text"|' ./msm-kernel/scripts/setlocalversion
+          sed -i '$s|echo "\$res"|echo "\$res-$random_text"|' ./external/dtc/scripts/setlocalversion
           sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl || echo "No stamp.bzl!"
           sed -i 's/-dirty//' ./common/scripts/setlocalversion
           sed -i 's/-dirty//' ./msm-kernel/scripts/setlocalversion
