@@ -58,14 +58,14 @@ jobs:
         Mountify for KernelSU Module: 
         -> https://github.com/backslashxx/mountify
 
-        Non-Official Managers:
+        KernelSU Next Manager:
         -> https://github.com/KernelSU-Next/KernelSU-Next
 
         Features:
         [+] KernelSU-Next
         [+] SUSFS v1.5.5
         [+] BBR
-        [+] Mountify
+        [+] Mountify Support
 
     steps:
       - name: Checkout code
