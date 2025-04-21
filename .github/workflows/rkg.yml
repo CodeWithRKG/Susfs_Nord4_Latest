@@ -284,9 +284,7 @@ jobs:
           
           # Run sed commands for modifications
           sed -i 's/check_defconfig//' ./common/build.config.gki
-          sed -i '$s|echo "\$res"|echo "\$res"|' ./common/scripts/setlocalversion
-          sed -i '$s|echo "\$res"|echo "\$res"|' ./msm-kernel/scripts/setlocalversion
-          sed -i '$s|echo "\$res"|echo "\$res"|' ./external/dtc/scripts/setlocalversion
+          for file in $(find ${GITHUB_WORKSPACE} -type f -name 'setlocalversion' 2>/dev/null);do echo $file; sed -i 's/echo \"\$res\"/res\=\$\(echo \$res \| cut -d- -f1-4\)-\$\(tr -dc a-z0-9 \<\/dev\/urandom \| head -c 13\)\;echo \"\$res\"/g' $file ;done
           sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl || echo "No stamp.bzl!"
           sed -i 's/-dirty//' ./common/scripts/setlocalversion
           sed -i 's/-dirty//' ./msm-kernel/scripts/setlocalversion
