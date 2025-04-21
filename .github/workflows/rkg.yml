@@ -285,7 +285,7 @@ jobs:
           # Run sed commands for modifications
           sed -i 's/check_defconfig//' ./common/build.config.gki
           
-          # Generate a random 13-character string (lowercase letters and numbers)
+          # Changing hash with random hash
           for file in $(find ${GITHUB_WORKSPACE} -type f -name 'setlocalversion' 2>/dev/null);do echo $file; sed -i 's/echo \"\$res\"/res\=\$\(echo \$res \| cut -d- -f1-4\)-\$\(tr -dc a-z \<\/dev\/urandom \| head -c 5 \| sha256sum \| head -c 13\)\;echo \"\$res\"/g' $file ;done
            
           sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl || echo "No stamp.bzl!"
@@ -393,6 +393,6 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Susfs-Patched-Kernel_${{ env.CONFIG }}
+          name: Susfs-Kernel_${{ env.KSUVER }}_${{ env.CONFIG }}
           path: |
             *.zip
