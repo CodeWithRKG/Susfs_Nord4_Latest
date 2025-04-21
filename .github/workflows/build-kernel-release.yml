@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload Release Assets Dynamically
         run: |
-          for file in ./downloaded-artifacts/kernel-*/*; do
+          for file in ./downloaded-artifacts/Susfs-Kernel_*/*; do
               if [ -d "$file" ]; then
                   continue
               fi
