@@ -63,7 +63,7 @@ jobs:
 
         Features:
         [+] KernelSU-Next
-        [+] SUSFS v1.5.5
+        [+] SUSFS 1.5.6
         [+] BBR
         [+] Mountify Support
 
