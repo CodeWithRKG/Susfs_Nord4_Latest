@@ -47,7 +47,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_NAME: "*Susfs Patched Kernels With KernelSU Next and BBR*"
       RELEASE_NOTES: |
-        This release contains KernelSU Next and SUSFS v1.5.5
+        This release contains KernelSU Next and SUSFS v1.5.6
 
         Kernel Flasher: 
         -> https://github.com/fatalcoder524/KernelFlasher
