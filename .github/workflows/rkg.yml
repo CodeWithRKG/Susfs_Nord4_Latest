@@ -295,6 +295,14 @@ jobs:
           sed -i 's/-dirty//' ./build/kernel/kleaf/workspace_status_stamp.py || echo "No workspace_status_stamp.py!"
           sed -i '/echo "LTO $LTO "/i export LTO=thin' ./oplus/build/oplus_setup.sh
           sed -i 's/export REPACK_IMG=true/export REPACK_IMG=false/g' ./oplus/build/oplus_setup.sh
+
+          # Run perl command to modify UTS_VERSION
+          
+          DATESTR=$(date -u)
+          perl -pi -e "s{UTS_VERSION=\"\\\$\\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $DATESTR\"}" ./common/scripts/mkcompile_h
+          perl -pi -e "s{UTS_VERSION=\"\\\$\\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $DATESTR\"}" ./msm-kernel/scripts/mkcompile_h
+          
+          find . -type f -exec sed -i 's/\(make\s\+-C[^\n]*\)\s\+/\1 -j$(nproc) /g' {} +
           
       - name: Build the Kernel
         run: |
@@ -351,9 +359,9 @@ jobs:
           cd ./AnyKernel3
           
           sed -i 's|^kernel\.string=.*|kernel.string=OnePlus Nord 4 KSUN + SUSFS Kernel by CodeWithRKG|' anykernel.sh
-          sed -i 's|^do\.devicecheck=.*|do.devicecheck=0|' anykernel.sh
-          sed -i 's|^device\.name1=.*|device.name1=CPH2661|' anykernel.sh
-          sed -i 's|^device\.name2=.*|device.name2=CPH2663|' anykernel.sh
+          sed -i 's|^do\.devicecheck=.*|do.devicecheck=1|' anykernel.sh
+          sed -i 's|^device\.name1=.*|device.name1=CPH2661.*|' anykernel.sh
+          sed -i 's|^device\.name2=.*|device.name2=CPH2663.*|' anykernel.sh
           sed -i '/ui_print " " "  -> ksu_supported: $ksu_supported"/i \
           ui_print "Features:"\
           ui_print "-> KernelSU-Next-Official"\
@@ -366,14 +374,6 @@ jobs:
           ui_print "-> CONFIG_TMPFS_XATTR Support for Mountify"\
           ui_print "-> TCP Congestion Algorithm: BBR enabled"' anykernel.sh
 
-          # Run perl command to modify UTS_VERSION
-          
-          DATESTR=$(date -u)
-          perl -pi -e "s{UTS_VERSION=\"\\\$\\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $DATESTR\"}" ./common/scripts/mkcompile_h
-          perl -pi -e "s{UTS_VERSION=\"\\\$\\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $DATESTR\"}" ./msm-kernel/scripts/mkcompile_h
-          
-          find . -type f -exec sed -i 's/\(make\s\+-C[^\n]*\)\s\+/\1 -j$(nproc) /g' {} +
-          
           # Zip the files in the AnyKernel3 directory with a new naming convention
           # Generate Indian Standard Time (IST)
           IST_DATE_TIME=$(TZ=Asia/Kolkata date +'%d-%m-%Y_%I-%M-%p')
