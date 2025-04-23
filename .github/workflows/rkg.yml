@@ -361,9 +361,9 @@ jobs:
           sed -i 's|^kernel\.string=.*|kernel.string=OnePlus Nord 4 KSUN + SUSFS Kernel by CodeWithRKG|' anykernel.sh
           sed -i 's|^do\.devicecheck=.*|do.devicecheck=1|' anykernel.sh
           sed -i 's|^device\.name1=.*|device.name1=CPH2661|' anykernel.sh
-          sed -i 's|^device\.name1=.*|device.name2=CPH2661IN|' anykernel.sh
-          sed -i 's|^device\.name1=.*|device.name3=CPH2663|' anykernel.sh
-          sed -i 's|^device\.name2=.*|device.name4=CPH2663EEA|' anykernel.sh
+          sed -i 's|^device\.name2=.*|device.name2=CPH2661IN|' anykernel.sh
+          sed -i 's|^device\.name3=.*|device.name3=CPH2663|' anykernel.sh
+          sed -i 's|^device\.name4=.*|device.name4=CPH2663EEA|' anykernel.sh
           sed -i '/ui_print "-> KSU\/KSUN Supported: $ksu_supported"/i \
           ui_print "Features:"\
           ui_print "-> KernelSU-Next-Official"\
