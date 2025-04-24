@@ -366,8 +366,8 @@ jobs:
           sed -i 's|^device\.name4=.*|device.name4=CPH2663EEA|' anykernel.sh
           sed -i '/ui_print " " "  -> ksu_supported: $ksu_supported"/i \
           ui_print "Features:"\
-          ui_print "-> KernelSU-Next-Official"\
-          ui_print "-> SUSFS v1.5.6"\
+          ui_print "-> KernelSU Next"\
+          ui_print "-> SUSFS v1.5.7"\
           ui_print "-> Manual Hooks for Better Hiding"\
           ui_print "-> Wireguard Support"\
           ui_print "-> Simple Maphide for LineageOS Detections"\
