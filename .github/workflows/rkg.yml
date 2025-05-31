@@ -24,7 +24,11 @@ on:
       kernel_version:
         required: true
         type: string
-  
+      ksun_branch:
+        required: true
+        type: string
+        default: stable
+
 jobs:
   build-kernel-oneplus-kernelsu-susfs:
     runs-on: ubuntu-latest
@@ -97,7 +101,7 @@ jobs:
           # Clone repositories using the branch names
           git clone https://github.com/TheWildJames/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
-          git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/TheWildJames/kernel_patches.git
 
       - name: Initialize and Sync Kernel Source
         run: |
@@ -112,20 +116,21 @@ jobs:
           # Sync repo and apply patches
           $REPO --version
           $REPO --trace sync -c --no-clone-bundle --no-tags --optimized-fetch -j$(nproc --all) --fail-fast
-          
-      - name: Add KernelSU
+      
+      - name: Add KernelSU Next
         run: |
           echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG/kernel_platform"
           
-          echo "Adding KernelSU..."
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-susfs-dev
+          echo "Adding KernelSU Next..."
+          
+          if [ "${{ inputs.ksun_branch }}" == "stable" ]; then
+            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+          else
+            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s ${{ inputs.ksun_branch }}
+          fi
           
           git submodule update --init --recursive
-          cd KernelSU-Next/kernel
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" Makefile
 
       - name: Apply SUSFS Patches
         run: |
@@ -141,22 +146,42 @@ jobs:
           
           cd ./KernelSU-Next
           
-          echo "Applying next SUSFS patches..."
-          # cp ../../../kernel_patches/next/kernel-patch-susfs-v1.5.7-to-KernelSU-Next.patch ./
-          # patch -p1 --forward < kernel-patch-susfs-v1.5.7-to-KernelSU-Next.patch
+          if [ "${{ inputs.ksun_branch }}" == "stable" ] || [ "${{ inputs.ksun_branch }}" == "next" ]; then
+            echo "Applying next SUSFS patches..."
+            cp ../../../kernel_patches/next/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./ksun_susfs_latest.patch
+            patch -p1 --forward < ksun_susfs_latest.patch || true
+          fi
+          
+          # Determine base version based on branch
+          case "${{ inputs.ksun_branch }}" in
+            next|stable)
+              BASE_VERSION=10200
+              ;;
+            next-susfs|next-susfs-dev)
+              BASE_VERSION=10198
+              ;;
+            *)
+              BASE_VERSION=10200
+              ;;
+          esac
+          
+          cd ./kernel
+          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" $BASE_VERSION)
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" Makefile
           
           # Change to common directory and apply SUSFS patch
-          cd ../common
+          cd ../../common
           if [ "${{ inputs.soc }}" == "sun" ]; then
             sed -i '/#include <trace\/hooks\/blk.h>/a #include <trace/hooks/fs.h>' ./fs/namespace.c
           fi
           patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
 
-      - name: Apply KSU Hooks
+      - name: Apply KSUN Hooks
         run: |
           echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG/kernel_platform/common"
-          # Apply additional patch
+          echo "Applying KSUN Hooks..."
           cp ../../../kernel_patches/next/syscall_hooks.patch ./
           patch -p1 --fuzz=3 < ./syscall_hooks.patch
           
@@ -168,7 +193,7 @@ jobs:
           cp ../../../kernel_patches/69_hide_stuff.patch ./
           patch -p1 -F 3 < 69_hide_stuff.patch
 
-      - name: Add SUSFS Configuration Settings
+      - name: Add KernelSU-Next and SUSFS Configuration Settings
         run: |
           echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG/kernel_platform"
@@ -177,7 +202,7 @@ jobs:
           
           # Add KSU configuration settings
           echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_WITH_KPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
           
           # Add SUSFS configuration settings
           echo "CONFIG_KSU_SUSFS=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -200,76 +225,31 @@ jobs:
           # Add additional tmpfs config setting
           echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
+
+      - name: Add BBR Support
+        run: |
+          echo "Changing to configuration directory: $CONFIG..."
+          cd "$CONFIG/kernel_platform"
           
-          # Add additional tmpfs config setting
+          echo "Adding configuration settings to gki_defconfig..."
+          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_BIC=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_WESTWOOD=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TCP_CONG_HTCP=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
+          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_NET_SCH_FQ_CODEL=y" >> ./common/arch/arm64/configs/gki_defconfig
+
+      - name: Add TTL Target Support
+        run: |
+          echo "Changing to configuration directory: $CONFIG..."
+          cd "$CONFIG/kernel_platform"
+          
+          echo "Adding configuration settings to gki_defconfig..."
           echo "CONFIG_IP_NF_TARGET_TTL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_IP6_NF_TARGET_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_IP6_NF_MATCH_HL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          
-          # Add additional tcp_bbr config setting
-          # Enable BBR
-          echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
-          
-          # Optional: Keep Reno/Cubic as alternatives
-          echo "CONFIG_TCP_CONG_CUBIC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TCP_CONG_RENO=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TCP_CONG_CDG=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DEFAULT_CUBIC=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo 'CONFIG_DEFAULT_TCP_CONG="cubic"' >> ./common/arch/arm64/configs/gki_defconfig
-          
-          # Disable Unnecessary TCP Congestion Algorithms
-          echo "# CONFIG_TCP_CONG_BIC is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_WESTWOOD is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_HTCP is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_HSTCP is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_HYBLA is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_VEGAS is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_NV is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_SCALABLE is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_LP is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_VENO is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_YEAH is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_ILLINOIS is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_TCP_CONG_DCTCP is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "# CONFIG_TCP_CONG_CDG is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          
-          # Enable FQ-CoDel and FQ for Queue Management
-          echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NET_SCH_FQ_CODEL=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_NET_SCH_DEFAULT=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DEFAULT_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
-          echo 'CONFIG_DEFAULT_NET_SCH="fq"' >> ./common/arch/arm64/configs/gki_defconfig
-          
-          # Disable Other Queuing Disciplines
-          echo "# CONFIG_NET_SCH_CBQ is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_HTB is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_HFSC is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_ATM is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_PRIO is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_MULTIQ is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_RED is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_SFB is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_SFQ is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_TEQL is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_TBF is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_CBS is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_ETF is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_TAPRIO is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_GRED is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_DSMARK is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_NETEM is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_DRR is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_MQPRIO is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_SKBPRIO is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_CHOKE is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_QFQ is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_CODEL is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_CAKE is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_HHF is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_PIE is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_FQ_PIE is not set" >> ./common/arch/arm64/configs/gki_defconfig
-          echo "# CONFIG_NET_SCH_INGRESS is not set" >> ./common/arch/arm64/configs/gki_defconfig
 
       - name: Run sed and perl Commands
         run: |
@@ -293,17 +273,17 @@ jobs:
           sed -i 's/-dirty//' ./msm-kernel/scripts/setlocalversion
           sed -i 's/-dirty//' ./external/dtc/scripts/setlocalversion
           sed -i 's/-dirty//' ./build/kernel/kleaf/workspace_status_stamp.py || echo "No workspace_status_stamp.py!"
+          
           sed -i '/echo "LTO $LTO "/i export LTO=thin' ./oplus/build/oplus_setup.sh
           sed -i 's/export REPACK_IMG=true/export REPACK_IMG=false/g' ./oplus/build/oplus_setup.sh
-
+         
           # Run perl command to modify UTS_VERSION
-          
           DATESTR=$(date -u)
-          perl -pi -e "s{UTS_VERSION=\"\\\$\\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $DATESTR\"}" ./common/scripts/mkcompile_h
-          perl -pi -e "s{UTS_VERSION=\"\\\$\\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $DATESTR\"}" ./msm-kernel/scripts/mkcompile_h
+          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT $DATESTR"}' ./common/scripts/mkcompile_h
+          perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT $DATESTR"}' ./msm-kernel/scripts/mkcompile_h
           
-          find . -type f -exec sed -i 's/\(make\s\+-C[^\n]*\)\s\+/\1 -j$(nproc) /g' {} +
-          
+          # find . -type f -exec sed -i 's/\(make\s\+-C[^\n]*\)\s\+/\1 -j$(nproc) /g' {} +
+
       - name: Build the Kernel
         run: |
           echo "Changing to configuration directory: $CONFIG..."
