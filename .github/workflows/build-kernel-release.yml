@@ -12,6 +12,16 @@ on:
         required: true
         type: boolean
         default: true
+      ksun_branch:
+        description: "Choose KernelSU Next Branch"
+        required: true
+        type: choice
+        options:
+          - stable
+          - next
+          - next-susfs
+          - next-susfs-dev
+        default: stable
 
 jobs:
   build-batch-1: 
@@ -34,6 +44,7 @@ jobs:
       manifest: ${{ matrix.manifest }}
       android_version: ${{ matrix.android_version }}
       kernel_version: ${{ matrix.kernel_version }}
+      ksun_branch: ${{ inputs.ksun_branch }}
 
   trigger-release:
     needs:
