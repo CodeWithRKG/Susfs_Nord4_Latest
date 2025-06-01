@@ -164,11 +164,18 @@ jobs:
               BASE_VERSION=10200
               ;;
           esac
+
+          git clone https://github.com/KernelSU-Next/KernelSU-Next
+          cd KernelSU-Next
+          C_VERSION=$(git log --oneline | wc -l)
+          cd ..
+          rm -rf KernelSU-Next
           
           cd ./kernel
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" $BASE_VERSION)
+          KSU_VERSION=$(expr $C_VERSION "+" 10200)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" Makefile
+          sed -i 's/\$\(KSU_GIT_VERSION\)/'${KSU_VERSION}'/g' Makefile
           
           # Change to common directory and apply SUSFS patch
           cd ../../common
