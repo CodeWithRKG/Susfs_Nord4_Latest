@@ -58,7 +58,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_NAME: "*Susfs Patched Kernels With KernelSU Next and BBR*"
       RELEASE_NOTES: |
-        This release contains KernelSU Next and SUSFS v1.5.7
+        This release contains KernelSU Next and SUSFS v1.5.8
 
         Kernel Flasher: 
         -> https://github.com/fatalcoder524/KernelFlasher
@@ -74,7 +74,7 @@ jobs:
 
         Features:
         [+] KernelSU-Next
-        [+] SUSFS 1.5.7
+        [+] SUSFS 1.5.8
         [+] BBR
         [+] Mountify Support
 
@@ -86,7 +86,7 @@ jobs:
         run: |
             LATEST_TAG=$(gh api repos/$REPO_OWNER/$REPO_NAME/tags --jq '.[0].name')
             if [ -z "$LATEST_TAG" ]; then
-              LATEST_TAG="v1.5.7-r0"
+              LATEST_TAG="v1.5.8-r0"
             fi
             NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
             echo "New tag: $NEW_TAG"
