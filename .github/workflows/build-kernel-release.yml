@@ -19,7 +19,7 @@ on:
         options:
           - stable
           - next
-        default: stable
+        default: next
 
 jobs:
   build-batch-1: 
