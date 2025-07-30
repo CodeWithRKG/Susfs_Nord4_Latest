@@ -164,9 +164,15 @@ jobs:
           susfs_version=$(grep '#define SUSFS_VERSION' ../common/include/linux/susfs.h | awk -F'"' '{print $2}')
           echo "SUSVER=$susfs_version" >> $GITHUB_ENV
           BASE_VERSION=10200
+          git clone https://github.com/KernelSU-Next/KernelSU-Next
+          cd KernelSU-Next
+          C_VERSION=$(git log --oneline | wc -l)
+          cd ..
+          rm -rf KernelSU-Next
           cd ./kernel
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" $BASE_VERSION)
+          KSU_VERSION=$(expr $C_VERSION "+" 10200)
           sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" Makefile
+          sed -i 's/\$\(KSU_GIT_VERSION\)/'${KSU_VERSION}'/g' Makefile
           cd ..
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           echo "KernelSU Next Version: $KSU_VERSION"
